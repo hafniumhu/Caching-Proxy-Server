@@ -1,0 +1,68 @@
+This danger log includes: 
+1. The bugs we face and how we deal with it.
+2. Some testcases
+
+Fixed bugs:
+1. At first we let the http request be an object of our request class (string request), 
+but it seems that it may happen segmentation fault, so we let the string request be a temporary argument.
+2. When we tried to test with some website wtih chunked data, we can only see the html, no images and videos are shown.
+that's because we only check the end of the response at the end, but the response could be sent via 
+pieces of the message but not the whole message, so we need to gather all teh pieces together and check if the end of the response exists.
+This bugs could cause other problems, and when we realize that the messange could be sent via pieces,
+we bring in a buffer to catch the whole message each time, and then check what we want. That's useful.
+3. When open too many tags at the same time, there might be a broken pipe sometimes. I searched on the Internet
+and add a signal function to avoid this problem.
+4. When we want to write the message of proxy.log, we find that there's nothing in it, I checked the
+authority and use chmod 777 proxy.log to fix it.
+5. When we implement via docker, we find that when we set ttr=True, the proxy might be closed accidently
+which cannot happen without docker, so I delete it to fix it.
+
+Other bugs:
+It seems that the SMPT protocal needs some more operations, and we ignore this request in our proxy
+
+Test cases:
+
+For basic test:
+https://www.google.com/
+https://www.youtube.com/
+
+For pure html website with many text:
+https://www.thepolyglotdeveloper.com/css/custom.min.css
+
+For the currency test also test the post:
+https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/
+we can write the code and run.
+
+For the test of website with huge amount of media data:
+https://red.jd.com/
+https://www.espn.com/
+
+
+By using https://www.mocky.io/ we can test many corner cases:
+1. 200 OK: http://www.mocky.io/v2/5e59d41a3000003c031f0a4a
+2. 400/404: http://www.mocky.io/v2/5e59d42f30000071001f0a4b 
+we can check the proxy.log and find that it documents:
+Received HTTP/1.1 400 Bad Request from www.mocky.io
+not cacheable because don't recieve 200 OK
+Responding HTTP/1.1 400 Bad Request
+3. 502: http://www.mocky.io/v2/5e59d43d30000071001f0a4c
+same as above
+4. some cache-check test: each one is OK
+http://www.mocky.io/v2/5e55f5c83000000f0028e1f5
+http://www.mocky.io/v2/5e564e05300000580028e4fc
+http://www.mocky.io/v2/5e5722d33000002b00fd3822
+
+Test chunked data:
+http://www.httpwatch.com/httpgallery/chunked/chunkedimage.aspx
+
+Test max-age:
+https://www.artsci.utoronto.ca/
+
+Test post:
+http://httpbin.org/forms/post
+
+For exception requests:
+For the bad requst, our proxy can handle it and print the error message.
+such as https://www.568interesting.com/
+our proxy will print Error: getaddrinfo().
+For some invalid request, our proxy will exit that child thread and wait for the next valid request.
